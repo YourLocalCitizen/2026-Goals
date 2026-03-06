@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2026 Goals Dashboard</title>
+<style>
+  body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    overflow: hidden;
+    transition: background 1s ease;
+    color: #00ffcc;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    height: 100vh;
+  }
+  h1 { margin-top: 20px; color: #ffcc00; }
+  #progressContainer { width: 60%; height: 25px; background: #222; border-radius: 12px; margin: 20px 0; overflow: hidden; }
+  #progressBar { height: 100%; background: linear-gradient(90deg, #ff00ff, #00ffff); width: 0%; border-radius: 12px; transition: width 0.5s; }
+  #goalsList { list-style: none; padding: 0; width: 60%; }
+  #goalsList li { margin: 10px 0; font-size: 18px; }
+  input[type="checkbox"] { transform: scale(1.5); margin-right: 10px; }
+  #addGoal { margin-top: 10px; padding: 6px 12px; border-radius: 8px; border: none; background: #00ffcc; color: #111; font-weight: bold; cursor: pointer; }
+  #newGoal { padding: 6px; border-radius: 8px; border: none; width: 300px; margin-left: 10px; }
+  #timer { font-size: 22px; margin-bottom: 10px; }
+  #clock { position: fixed; bottom: 20px; right: 20px; font-size: 20px; color: #ff00ff; }
+  #calendar { position: fixed; bottom: 20px; left: 20px; background: #111; border: 2px solid #00ffcc; border-radius: 12px; padding: 10px; color: #00ffcc; font-size: 14px; }
+  #calendar table { border-collapse: collapse; width: 250px; }
+  #calendar th, #calendar td { border: 1px solid #00ffcc; width: 35px; height: 35px; text-align: center; cursor: pointer; transition: background 0.3s; }
+  #calendar td:hover { background: #00ffcc33; }
+  .completed { background: #00ff9933 !important; }
+  .today { border: 2px solid #ffcc00; }
+  #funFact { margin-top: 15px; font-size: 16px; font-style: italic; }
+  .snowflake { position: fixed; top: -10px; color: white; font-size: 14px; pointer-events: none; animation-name: fall; animation-timing-function: linear; animation-iteration-count: infinite; }
+  @keyframes fall { 0% { transform: translateY(0) translateX(0); opacity:1; } 100% { transform: translateY(100vh) translateX(20px); opacity:0; } }
+</style>
+</head>
+<body>
+<h1>Goals for 2026</h1>
+<div id="timer"></div>
+<div id="progressContainer"><div id="progressBar"></div></div>
+
+<ul id="goalsList">
+  <li><input type="checkbox" data-index="0">Finish Midnight Afterimage</li>
+  <li><input type="checkbox" data-index="1">Get Midnight Afterimage Rated</li>
+  <li><input type="checkbox" data-index="2">Get a video over 50k views</li>
+  <li><input type="checkbox" data-index="3">Get a video over 10k likes</li>
+  <li><input type="checkbox" data-index="4">Get 100k Subscribers</li>
+  <li><input type="checkbox" data-index="5">Post 50 videos TOTAL</li>
+  <li><input type="checkbox" data-index="6">Post the Roblox Game</li>
+  <li><input type="checkbox" data-index="7">Finish the 30 day December Idea for Geometry Dash</li>
+</ul>
+<input type="text" id="newGoal" placeholder="Add a new goal">
+<button id="addGoal">Add Goal</button>
+<div id="funFact"></div>
+<div id="calendar"></div>
+<div id="clock"></div>
+
+<script>
+// LocalStorage Goals & Streak
+let goals = JSON.parse(localStorage.getItem('goals2026')) || [];
+let streak = JSON.parse(localStorage.getItem('streak2026')) || { current:0, longest:0, lastChecked:null };
+const checkboxes = document.querySelectorAll('#goalsList input[type="checkbox"]');
+
+function updateProgress(){
+  let checked = 0;
+  checkboxes.forEach(cb => { if(cb.checked) checked++; });
+  const percent = Math.round((checked / checkboxes.length) * 100);
+  document.getElementById('progressBar').style.width = percent + '%';
+}
+function saveGoals(){
+  const arr = [];
+  checkboxes.forEach(cb => arr.push(cb.checked));
+  localStorage.setItem('goals2026', JSON.stringify(arr));
+}
+checkboxes.forEach(cb=>{
+  const index=cb.dataset.index;
+  if(goals[index]) cb.checked=true;
+  cb.addEventListener('change', ()=>{
+    goals[index]=cb.checked;
+    saveGoals();
+    updateProgress();
+    updateStreak();
+  });
+});
+updateProgress();
+
+// Add New Goal
+document.getElementById('addGoal').addEventListener('click', ()=>{
+  const val=document.getElementById('newGoal').value.trim();
+  if(!val) return;
+  const li=document.createElement('li');
+  const idx=checkboxes.length + goals.length;
+  li.innerHTML=`<input type="checkbox" data-index="${idx}"> ${val}`;
+  document.getElementById('goalsList').appendChild(li);
+  goals.push(false);
+  saveGoals();
+  document.getElementById('newGoal').value='';
+  li.querySelector('input').addEventListener('change', e=>{
+    goals[idx]=e.target.checked;
+    saveGoals();
+    updateProgress();
+    updateStreak();
+  });
+});
+
+// Countdown Timer
+function updateTimer(){
+  const now=new Date();
+  const end2026=new Date('December 31, 2026 23:59:59');
+  const diff=end2026-now;
+  if(diff<=0){ document.getElementById('timer').textContent="🎉 2026 is over! 🎉"; return; }
+  const days=Math.floor(diff/(1000*60*60*24));
+  const hours=Math.floor((diff/(1000*60*60))%24);
+  const minutes=Math.floor((diff/(1000*60))%60);
+  const seconds=Math.floor((diff/1000)%60);
+  document.getElementById('timer').textContent=`Time left until 2027: ${days}d ${hours}h ${minutes}m ${seconds}s`;
+}
+setInterval(updateTimer,1000);
+updateTimer();
+
+// Clock
+function updateClock(){
+  const now=new Date();
+  document.getElementById('clock').textContent=now.toLocaleTimeString();
+}
+setInterval(updateClock,1000);
+updateClock();
+
+// Streak System
+function updateStreak(){
+  const today=new Date().toDateString();
+  let anyCheckedToday=Array.from(checkboxes).some(cb=>cb.checked);
+  if(anyCheckedToday){
+    if(streak.lastChecked!==today){
+      streak.current++;
+      streak.lastChecked=today;
+      if(streak.current>streak.longest) streak.longest=streak.current;
+    }
+  }
+  localStorage.setItem('streak2026',JSON.stringify(streak));
+}
+
+// Calendar
+function buildCalendar(){
+  const cal=document.getElementById('calendar');
+  const now=new Date();
+  const year=now.getFullYear();
+  const month=now.getMonth();
+  const firstDay=new Date(year,month,1).getDay();
+  const daysInMonth=new Date(year,month+1,0).getDate();
+  let html=`<table><tr>
+  <th>Su</th><th>Mo</th><th>Tu</th><th>We</th><th>Th</th><th>Fr</th><th>Sa</th>
+  </tr><tr>`;
+  for(let i=0;i<firstDay;i++) html+='<td></td>';
+  for(let d=1;d<=daysInMonth;d++){
+    let cls='';
+    if(d===now.getDate()) cls='today';
+    html+=`<td class="${cls}" data-day="${d}">${d}</td>`;
+    if((d+firstDay)%7===0) html+='</tr><tr>';
+  }
+  html+='</tr></table>';
+  cal.innerHTML=html;
+  cal.querySelectorAll('td').forEach(td=>{
+    td.addEventListener('click',()=>{
+      const day=td.dataset.day;
+      alert(`Fun fact, holidays, and quests for ${month+1}/${day}/${year} coming here!`);
+    });
+  });
+}
+buildCalendar();
+
+// Fun Facts
+const funFacts=[
+  "The Moon is moving away from Earth 3.8cm per year.",
+  "Honey never spoils.",
+  "Octopuses have three hearts.",
+  "Sharks existed before trees.",
+  "Bananas are berries, but strawberries aren’t.",
+  "There’s a species of jellyfish that can live forever."
+];
+function showFunFact(){
+  const idx=new Date().getDate()%funFacts.length;
+  document.getElementById('funFact').textContent="💡 "+funFacts[idx];
+}
+showFunFact();
+
+// Dynamic Theme
+function updateTheme(){
+  const h=new Date().getHours();
+  let bg='#111';
+  if(h>=6 && h<12) bg='#88ccee';
+  else if(h>=12 && h<18) bg='#ffee88';
+  else if(h>=18 && h<21) bg='#6677aa';
+  else if(h>=21 && h<24) bg='#112233';
+  else if(h>=0 && h<4) bg='#000000';
+  else bg='#ffffcc';
+  document.body.style.background=bg;
+  const now=new Date();
+  const month=now.getMonth();
+  const date=now.getDate();
+  if(month===11 && date>=20 && date<=31) startSnow();
+  else stopSnow();
+}
+setInterval(updateTheme,1000);
+updateTheme();
+
+// Snow
+let snowInterval;
+function startSnow(){
+  if(snowInterval) return;
+  snowInterval=setInterval(()=>{
+    const s=document.createElement('div');
+    s.className='snowflake';
+    s.style.left=Math.random()*window.innerWidth+'px';
+    s.style.fontSize=(8+Math.random()*10)+'px';
+    s.textContent='❄';
+    document.body.appendChild(s);
+    setTimeout(()=>s.remove(),10000);
+  },200);
+}
+function stopSnow(){ clearInterval(snowInterval); snowInterval=null; }
+</script>
+</body>
+</html>
